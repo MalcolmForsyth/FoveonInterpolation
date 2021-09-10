@@ -1,33 +1,56 @@
+import os
+
 import torch
-from skimage.io import imread
-from torch.utils import data
+from torch.utils.data import Dataset
+from torchvision.transforms import Resize, RandomHorizontalFlip
+import numpy as np 
 
+import h5py
 
-class ImageDataset(data.Dataset):
-    def __init__(self,
-                 inputs: list,
-                 targets: list,
-                 transform=None
-                 ):
-        self.inputs = inputs
-        self.targets = targets
-        self.inputs_dtype = torch.float32
-        self.targets_dtype = torch.long
+class FoveonMaskDataset(Dataset):
+
+    def __init__(self, paths, target_transform=None):
+
+        self.imgs = []
+        for path in paths:
+            file = h5py.File(path, 'r')
+            n_frames, w, h, d = file['Data']['Data'].shape
+            [self.images.append((path, i, w, h, d)) for i in range(n_frames)]
+        self.resize = Resize((896, 1344))
+        self.flip = RandomHorizontalFlip()
+
+        self.mask_offset_0 = torch.zeros((896,1344), dtype=torch.bool)
+        for r, row in enumerate(self.mask_offset_0):
+            for c, pos in enumerate(row):
+                if (r+c)%2 == 0: 
+                    mask_offset_0[r][c] = True
+
+        self.mask_offset_1 = torch.clone(~self.mask_offset_0)
 
     def __len__(self):
-        return len(self.inputs)
+        return len(self.imgs)
 
-    def __getitem__(self,
-                    index: int):
-        # Select the sample
-        input_ID = self.inputs[index]
-        target_ID = self.targets[index]
+    def __getitem__(self, idx):
+        
+        path, i, w, h, d = self.imgs[idx]
 
-        # Load input and target
-        x, y = imread(input_ID), imread(target_ID)
+        file = h5py.File(path, 'r')
+        y = file['Data']['Data'][i]
+        
+        # reshape
+        y = self.resize(y)
+        y = self.flip(y)
 
+        X = torch.clone(y)
+        
+        # checkerboard
+        X = self._checkerboard(X, bool(np.random.rand()>.5))
 
-        # Typecasting
-        x, y = torch.from_numpy(x).type(self.inputs_dtype), torch.from_numpy(y).type(self.targets_dtype)
+        return X, y
+    
 
-        return x, y
+    def _checkerboard(image, is_start_one: bool):
+        if is_start_one:
+            return torch.masked_select(image, self.mask_offset_0)
+        else:
+            return torch.masked_select(image, self.mask_offset_1)
