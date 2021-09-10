@@ -1,12 +1,18 @@
+from Trainer import Trainer
+from UNet import UNet
+
 import numpy as np
 from ImageDataset import FoveonMaskDataset
 from Trainer import Trainer
 import pathlib
 import glob 
+import torch
+import numpy
 
+from torch.utils.data import DataLoader
 # root directory
 
-root = # root of stuff
+root = r'/mnt/weustis2/'# root of stuff
 
 paths = []
 for folder in glob.glob(root + "*"):
@@ -15,15 +21,19 @@ for folder in glob.glob(root + "*"):
             paths.append(sub_sub_folder)
             
 # split paths into test/train 
-train_size = 0.8  # 80:20 split
+train_size = int(.8*len(paths))  # 80:20 split
+np.random.shuffle(paths)
+
+train_paths = paths[:train_size]
+test_paths = paths[train_size:]
 
 
-training_dataset = FoveonMaskDataset(paths)
-testing_dataset = FoveonMaskDataset(paths)
+training_dataset = FoveonMaskDataset(train_paths)
+testing_dataset = FoveonMaskDataset(test_paths)
 
 # random seed
 random_seed = 42
-num_epochs = 30
+num_epochs = 1
 
 torch.manual_seed(random_seed)
 
@@ -31,7 +41,7 @@ torch.manual_seed(random_seed)
 
 
 training_dataloader = DataLoader(dataset=training_dataset,
-                                 batch_size=2,
+                                 batch_size=4,
                                  shuffle=True)
 
 
@@ -40,8 +50,8 @@ testing_dataloader = DataLoader(dataset=testing_dataset,
                                    shuffle=True)
 
 
-model = UNet(in_channels=3, out_channels=3)
-
+model = UNet(in_channels=3, out_channels=3, n_blocks=5, start_filters=32)
+model = model.to('cuda')
 print("N Params:", sum(p.numel() for p in model.parameters()))
 
 '''     def __init__(self,
@@ -59,10 +69,10 @@ print("N Params:", sum(p.numel() for p in model.parameters()))
 '''
 
 crit = torch.nn.MSELoss()
-opt = torch.optim.SGD(model.parameters(), lr = .01, momentum=.9)
+opt = torch.optim.SGD(model.parameters(), lr = .001, momentum=.9)
 
 trainer = Trainer(model, torch.device('cuda'), crit, opt,  
                   training_dataloader, testing_dataloader, 
-                  lr_scheduler=torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=.1),
-                  epochs=num_epochs
-                  )
+                  epochs=num_epochs)
+
+print(trainer.run_trainer())

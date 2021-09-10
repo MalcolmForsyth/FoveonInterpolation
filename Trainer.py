@@ -57,6 +57,7 @@ class Trainer:
                     self.lr_scheduler.batch(self.validation_loss[i])  # learning rate scheduler step with validation loss
                 else:
                     self.lr_scheduler.batch()  # learning rate scheduler step
+        torch.save(self.model, "UNet_5_32_b4.pt")
         return self.training_loss, self.validation_loss, self.learning_rate
 
     def _train(self):
