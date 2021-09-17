@@ -283,7 +283,8 @@ class UNet(nn.Module):
                  normalization: str = 'batch',
                  conv_mode: str = 'same',
                  dim: int = 2,
-                 up_mode: str = 'transposed'
+                 up_mode: str = 'transposed',
+                 extra_convolutions = 1
                  ):
         super().__init__()
 
@@ -296,6 +297,7 @@ class UNet(nn.Module):
         self.conv_mode = conv_mode
         self.dim = dim
         self.up_mode = up_mode
+        self.extra_convolutions = extra_convolutions
 
         self.down_blocks = []
         self.up_blocks = []
@@ -317,6 +319,7 @@ class UNet(nn.Module):
             self.down_blocks.append(down_block)
 
         # create decoder path (requires only n_blocks-1 blocks)
+        #changed to n_blocks when taking in w/2, h/2 -> w,h?
         for i in range(n_blocks - 1):
             num_filters_in = num_filters_out
             num_filters_out = num_filters_in // 2
@@ -331,9 +334,11 @@ class UNet(nn.Module):
 
             self.up_blocks.append(up_block)
 
-        # final convolution
-        self.conv_final = get_conv_layer(num_filters_out, self.out_channels, kernel_size=1, stride=1, padding=0,
-                                         bias=True, dim=self.dim)
+        self.final_convs = []
+        for i in range(extra_convolutions):
+            # final convolution layers
+            self.final_convs.append(get_conv_layer(num_filters_out, self.out_channels, kernel_size=1, stride=1, padding=0,
+                                         bias=True, dim=self.dim))
 
         # add the list of modules to current module
         self.down_blocks = nn.ModuleList(self.down_blocks)
@@ -375,7 +380,8 @@ class UNet(nn.Module):
             before_pool = encoder_output[-(i + 2)]
             x = module(before_pool, x)
 
-        x = self.conv_final(x)
+        for i in range(self.extra_convolutions):
+            x = self.final_convs[i](x)
 
         return x
 

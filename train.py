@@ -44,20 +44,6 @@ model = UNet(in_channels=3, out_channels=3)
 
 print("N Params:", sum(p.numel() for p in model.parameters()))
 
-'''     def __init__(self,
-                 model: torch.nn.Module,
-                 device: torch.device,
-                 criterion: torch.nn.Module,
-                 optimizer: torch.optim.Optimizer,
-                 training_DataLoader: torch.utils.data.Dataset,
-                 validation_DataLoader: torch.utils.data.Dataset = None,
-                 lr_scheduler: torch.optim.lr_scheduler = None,
-                 epochs: int = 100,
-                 epoch: int = 0,
-                 notebook: bool = False
-                 ):
-'''
-
 crit = torch.nn.MSELoss()
 opt = torch.optim.SGD(model.parameters(), lr = .01, momentum=.9)
 

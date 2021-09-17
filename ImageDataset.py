@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Resize, RandomHorizontalFlip
 import numpy as np 
+import scipy.ndimage as im
 
 import h5py
 
@@ -36,6 +37,9 @@ class FoveonMaskDataset(Dataset):
 
         file = h5py.File(path, 'r')
         y = file['Data']['Data'][i]
+
+        #acceptable place to put the blurring convolution?
+        im.convolve1d(y, filter = np.array[1.9,-0.9] , axis = 1, mode = 'constant', origin = -1)
         
         # reshape
         y = self.resize(y)
@@ -53,4 +57,4 @@ class FoveonMaskDataset(Dataset):
         if is_start_one:
             return torch.masked_select(image, self.mask_offset_0)
         else:
-            return torch.masked_select(image, self.mask_offset_1)
+            return torch.masked_select(image, self.mask_offset_1)        
