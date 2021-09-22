@@ -14,7 +14,8 @@ class Trainer:
                  lr_scheduler: torch.optim.lr_scheduler = None,
                  epochs: int = 100,
                  epoch: int = 0,
-                 notebook: bool = False
+                 notebook: bool = False,
+                 wandb_log=None
                  ):
 
         self.model = model
@@ -27,6 +28,7 @@ class Trainer:
         self.epochs = epochs
         self.epoch = epoch
         self.notebook = notebook
+        self.log = wandb_log
 
         self.training_loss = []
         self.validation_loss = []
@@ -53,10 +55,7 @@ class Trainer:
 
             """Learning rate scheduler block"""
             if self.lr_scheduler is not None:
-                if self.validation_DataLoader is not None and self.lr_scheduler.__class__.__name__ == 'ReduceLROnPlateau':
-                    self.lr_scheduler.batch(self.validation_loss[i])  # learning rate scheduler step with validation loss
-                else:
-                    self.lr_scheduler.batch()  # learning rate scheduler step
+                self.lr_scheduler.step()  # learning rate scheduler step
         torch.save(self.model, "UNet_5_32_b4.pt")
         return self.training_loss, self.validation_loss, self.learning_rate
 
@@ -76,12 +75,12 @@ class Trainer:
             input, target = x.to(self.device), y.to(self.device)  # send to device (GPU or CPU)
             self.optimizer.zero_grad()  # zerograd the parameters
             out = self.model(input)  # one forward pass
-            loss = self.criterion(out, target)  # calculate loss
+            loss = torch.sqrt(self.criterion(out, target))  # calculate loss
             loss_value = loss.item()
             train_losses.append(loss_value)
             loss.backward()  # one backward pass
             self.optimizer.step()  # update the parameters
-
+            self.log({'train_loss': loss.item()})
             batch_iter.set_description(f'Training: (loss {loss_value:.4f})')  # update progressbar
 
         self.training_loss.append(np.mean(train_losses))
@@ -106,9 +105,10 @@ class Trainer:
 
             with torch.no_grad():
                 out = self.model(input)
-                loss = self.criterion(out, target)
+                loss = torch.sqrt(self.criterion(out, target))
                 loss_value = loss.item()
                 valid_losses.append(loss_value)
+                self.log({'test_loss': loss.item()})
 
                 batch_iter.set_description(f'Validation: (loss {loss_value:.4f})')
 

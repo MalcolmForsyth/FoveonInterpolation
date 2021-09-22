@@ -8,7 +8,11 @@ import pathlib
 import glob 
 import torch
 import numpy
+import wandb
+from vit import ViT
 
+
+wandb.init("fov-interp")
 from torch.utils.data import DataLoader
 # root directory
 
@@ -27,13 +31,14 @@ np.random.shuffle(paths)
 train_paths = paths[:train_size]
 test_paths = paths[train_size:]
 
+print(train_paths)
 
 training_dataset = FoveonMaskDataset(train_paths)
 testing_dataset = FoveonMaskDataset(test_paths)
 
 # random seed
 random_seed = 42
-num_epochs = 1
+num_epochs = 12
 
 torch.manual_seed(random_seed)
 
@@ -50,7 +55,17 @@ testing_dataloader = DataLoader(dataset=testing_dataset,
                                    shuffle=True)
 
 
-model = UNet(in_channels=3, out_channels=3, n_blocks=5, start_filters=32)
+model = ViT(
+    image_size = 32*3, # pass three patches in 
+    patch_size = 16,
+    num_classes = 32**2, # predict every other pixel
+    dim = 1024,
+    depth = 6,
+    heads = 16,
+    mlp_dim = 2048,
+    dropout = 0.1,
+    emb_dropout = 0.1
+)
 model = model.to('cuda')
 print("N Params:", sum(p.numel() for p in model.parameters()))
 
@@ -67,12 +82,17 @@ print("N Params:", sum(p.numel() for p in model.parameters()))
                  notebook: bool = False
                  ):
 '''
+def wandb_log(d):
+    wandb.log(d)
 
-crit = torch.nn.MSELoss()
+wandb.watch(model)
+
+crit = torch.nn.MSELoss() # RMSE
 opt = torch.optim.SGD(model.parameters(), lr = .001, momentum=.9)
 
 trainer = Trainer(model, torch.device('cuda'), crit, opt,  
                   training_dataloader, testing_dataloader, 
-                  epochs=num_epochs)
+                  lr_scheduler=torch.optim.lr_scheduler.StepLR(opt, step_size=3, gamma=.5),
+                  epochs=num_epochs, wandb_log=wandb_log)
 
 print(trainer.run_trainer())
