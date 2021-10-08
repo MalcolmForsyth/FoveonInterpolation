@@ -17,6 +17,9 @@ class ThreeConvModel(nn.Module):
             x = conv(x)
         return x
 
+
+
+'''
 class TwoConvModel(nn.Module):
     def __init__(
         self,
@@ -31,18 +34,15 @@ class TwoConvModel(nn.Module):
         for conv in self.conv_blocks:
             x = conv(x)
         return x
+'''
 
 if __name__ == "__main__":
     cmodel = ThreeConvModel(n_conv_blocks=3)
-    cmodel2 = TwoConvModel(n_conv_blocks=4)
     print(len(cmodel.conv_blocks))
     print(cmodel.conv_blocks[0].weight.shape)
     image = torch.rand(1, 1, 3, 896, 1344)
     output = cmodel.forward(image)
     print(output.shape)
 
-    print(len(cmodel2.conv_blocks))
-    print(cmodel2.conv_blocks[0].weight.shape)
-    image = torch.rand(1, 1, 3, 896, 1344)
-    output = cmodel2.forward(image)
-    print(output.shape)
+
+    
