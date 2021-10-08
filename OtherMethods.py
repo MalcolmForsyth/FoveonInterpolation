@@ -5,7 +5,6 @@ import glob
 import torch
 import numpy
 from torch.nn import functional as F
-from sklearn.metrics import mean_squared_error as mse
 from metrics import PSNR, ssim
 from torch.utils.data import DataLoader
 # root directory

@@ -3,7 +3,6 @@ import sys
 import math
 import torch
 import numpy as np
-import cv2
 
 
 class PSNR:

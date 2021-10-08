@@ -51,13 +51,13 @@ class Trainer:
             self._train()
 
             """Validation block"""
-            if self.validation_DataLoader is not None:
+            if self.validation_DataLoader is not None and self.epoch == 2:
                 self._validate()
 
             """Learning rate scheduler block"""
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()  # learning rate scheduler step
-        torch.save(self.model, "UNet_5_32_b4.pt")
+        torch.save(self.model, "ThreeConv.pt")
         return self.training_loss, self.validation_loss, self.learning_rate
 
     def _train(self):
@@ -116,7 +116,9 @@ class Trainer:
                 loss_value = loss.item()
                 valid_losses.append(loss_value)
                 self.log({'test_loss': loss.item()})
-                
+                self.log({'test_psnr': self.PSNR(out, target),
+                 'test_ssim': self.SSIM(out,target)
+                })
                 batch_iter.set_description(f'Validation: (loss {loss_value:.4f})')
 
         self.validation_loss.append(np.mean(valid_losses))

@@ -32,14 +32,15 @@ class FoveonMaskDataset(Dataset):
         self.mask_offset_1 = torch.cat(3*[self.mask_offset_1.unsqueeze(0)])
         
         self.vit_crop = RandomCrop(32*3)
+
     def __len__(self):
         return len(self.imgs)
-
     def __getitem__(self, idx):
         
         path, i, w, h, d = self.imgs[idx]
-
+        
         file = h5py.File(path, 'r')
+        
         y = file['Data']['Data'][i].astype(np.int32)
          
         y = image.convolve1d(y, weights=np.array([1.9,-0.9]), axis = 1, mode = 'constant', origin = -1)
@@ -64,7 +65,7 @@ class FoveonMaskDataset(Dataset):
 
     def _checkerboard(self, image, is_start_one: bool):
         if is_start_one:
-            return image * self.mask_offset_0
+            return image * self.mask_offset_1 # We will only do one type for now
         else:
             return image * self.mask_offset_1
         # return image * self.vit_crop(self.mask_offset_0)

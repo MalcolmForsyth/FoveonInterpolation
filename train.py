@@ -11,6 +11,7 @@ import numpy
 import wandb
 from vit import ViT
 
+from ConvModel import ThreeConvModel
 
 wandb.init("fov-interp")
 from torch.utils.data import DataLoader
@@ -33,14 +34,13 @@ np.random.shuffle(paths)
 train_paths = paths[:train_size]
 test_paths = paths[train_size:]
 
-print(train_paths)
 
 training_dataset = FoveonMaskDataset(train_paths)
 testing_dataset = FoveonMaskDataset(test_paths)
 
 # random seed
 random_seed = 42
-num_epochs = 12
+num_epochs = 2
 
 torch.manual_seed(random_seed)
 
@@ -49,13 +49,16 @@ torch.manual_seed(random_seed)
 
 training_dataloader = DataLoader(dataset=training_dataset,
                                  batch_size=4,
-                                 shuffle=True)
+                                 shuffle=True,
+                                 num_workers=4,
+                                 prefetch_factor=4,
+                                 pin_memory=True)
 
 
 testing_dataloader = DataLoader(dataset=testing_dataset,
-                                   batch_size=2,
-                                   shuffle=True)
-model = UNet(in_channels=3, out_channels=3, n_blocks=5, start_filters=32)
+                                   batch_size=4,
+                                   shuffle=False)
+model = ThreeConvModel(1)# UNet(in_channels=3, out_channels=3, n_blocks=5, start_filters=24)
 '''
 model = ViT(
     image_size = 32*3, # pass three patches in 
@@ -95,7 +98,6 @@ opt = torch.optim.SGD(model.parameters(), lr = .001, momentum=.9)
 
 trainer = Trainer(model, torch.device('cuda'), crit, opt,  
                   training_dataloader, testing_dataloader, 
-                  lr_scheduler=torch.optim.lr_scheduler.StepLR(opt, step_size=3, gamma=.5),
+                  lr_scheduler=torch.optim.lr_scheduler.StepLR(opt, step_size=1, gamma=.5),
                   epochs=num_epochs, wandb_log=wandb_log)
-
 print(trainer.run_trainer())
