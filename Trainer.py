@@ -84,8 +84,8 @@ class Trainer:
             self.log(
                     {
                         'train_loss': loss.item(),
-                        'psnr_loss': self.PSNR(out, target),
-                        'ssim_loss': self.SSIM(out,target)
+                        'psnr': self.PSNR(out, target),
+                        'ssim': self.SSIM(out,target)
                     }
                     )
             batch_iter.set_description(f'Training: (loss {loss_value:.4f})')  # update progressbar

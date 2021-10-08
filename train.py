@@ -21,11 +21,11 @@ root = r'/home/william/fov_data/'# root of stuff
 paths = []
 for folder in glob.glob(root + "*"):
     for sub_folder in glob.glob(folder+"/*"):
-        print(sub_folder)
         for sub_sub_folder in glob.glob(sub_folder+"/*"):
             paths.append(sub_sub_folder)
 
-print(paths[:5])
+
+np.random.seed(42)
 # split paths into test/train 
 train_size = int(.8*len(paths))  # 80:20 split
 np.random.shuffle(paths)
