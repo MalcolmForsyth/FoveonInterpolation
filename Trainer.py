@@ -1,7 +1,6 @@
-
 import numpy as np
 import torch
-
+from metrics import PSNR, SSIM
 
 class Trainer:
     def __init__(self,
@@ -29,6 +28,8 @@ class Trainer:
         self.epoch = epoch
         self.notebook = notebook
         self.log = wandb_log
+        self.PSNR = PSNR()
+        self.SSIM = SSIM()
 
         self.training_loss = []
         self.validation_loss = []
@@ -80,7 +81,13 @@ class Trainer:
             train_losses.append(loss_value)
             loss.backward()  # one backward pass
             self.optimizer.step()  # update the parameters
-            self.log({'train_loss': loss.item()})
+            self.log(
+                    {
+                        'train_loss': loss.item(),
+                        'psnr_loss': self.PSNR(out, target),
+                        'ssim_loss': self.SSIM(out,target)
+                    }
+                    )
             batch_iter.set_description(f'Training: (loss {loss_value:.4f})')  # update progressbar
 
         self.training_loss.append(np.mean(train_losses))
@@ -109,7 +116,7 @@ class Trainer:
                 loss_value = loss.item()
                 valid_losses.append(loss_value)
                 self.log({'test_loss': loss.item()})
-
+                
                 batch_iter.set_description(f'Validation: (loss {loss_value:.4f})')
 
         self.validation_loss.append(np.mean(valid_losses))

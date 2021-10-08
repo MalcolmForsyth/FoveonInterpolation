@@ -16,14 +16,16 @@ wandb.init("fov-interp")
 from torch.utils.data import DataLoader
 # root directory
 
-root = r'/mnt/weustis2/'# root of stuff
+root = r'/home/william/fov_data/'# root of stuff
 
 paths = []
 for folder in glob.glob(root + "*"):
     for sub_folder in glob.glob(folder+"/*"):
+        print(sub_folder)
         for sub_sub_folder in glob.glob(sub_folder+"/*"):
             paths.append(sub_sub_folder)
-            
+
+print(paths[:5])
 # split paths into test/train 
 train_size = int(.8*len(paths))  # 80:20 split
 np.random.shuffle(paths)
@@ -53,8 +55,8 @@ training_dataloader = DataLoader(dataset=training_dataset,
 testing_dataloader = DataLoader(dataset=testing_dataset,
                                    batch_size=2,
                                    shuffle=True)
-
-
+model = UNet(in_channels=3, out_channels=3, n_blocks=5, start_filters=32)
+'''
 model = ViT(
     image_size = 32*3, # pass three patches in 
     patch_size = 16,
@@ -66,6 +68,7 @@ model = ViT(
     dropout = 0.1,
     emb_dropout = 0.1
 )
+'''
 model = model.to('cuda')
 print("N Params:", sum(p.numel() for p in model.parameters()))
 

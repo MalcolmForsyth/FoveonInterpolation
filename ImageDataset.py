@@ -41,25 +41,30 @@ class FoveonMaskDataset(Dataset):
 
         file = h5py.File(path, 'r')
         y = file['Data']['Data'][i].astype(np.int32)
-        
-        y = image.convolve1d(image, filter = np.array[1.9,-0.9] , axis = 1, mode = 'constant', origin = -1)
-        y = torch.Tensor(y)).float()/2**16
+         
+        y = image.convolve1d(y, weights=np.array([1.9,-0.9]), axis = 1, mode = 'constant', origin = -1)
+        y = torch.Tensor(y).float()/2**16
         y = y.permute([2,0,1]) # was h,w,c now c,h,w
         
         # reshape
         y = self.flip(y)
         # random crop for ViT
-        y = self.vit_crop(y)
+        # y = self.vit_crop(y)
         
         X = torch.clone(y)
         
         # checkerboard
         X = self._checkerboard(X, bool(np.random.rand()>.5))
+        # X = torch.reshape(x, (896, 1344))
         
         # resize y 
-        y = y[:, 32:32*2, 32:32*2]
+       #  y = y[:, 32:32*2, 32:32*2]
         return X, y
     
 
     def _checkerboard(self, image, is_start_one: bool):
-        return image * self.vit_crop(self.mask_offset_0)
+        if is_start_one:
+            return image * self.mask_offset_0
+        else:
+            return image * self.mask_offset_1
+        # return image * self.vit_crop(self.mask_offset_0)
