@@ -89,7 +89,8 @@ class Trainer:
                     }
                     )
             batch_iter.set_description(f'Training: (loss {loss_value:.4f})')  # update progressbar
-
+            if i%200 == 199:
+                torch.save(self.model, "ThreeConv.pt")
         self.training_loss.append(np.mean(train_losses))
         self.learning_rate.append(self.optimizer.param_groups[0]['lr'])
 
